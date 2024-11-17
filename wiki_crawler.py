@@ -50,7 +50,6 @@ def crawl_wiki(start_url: str, db_name: str, depth: int) -> None:
     while to_visit:
         current_url, current_depth = to_visit.pop(0)
         if current_depth <= depth:
-            print(current_url)
             if current_url not in visited:
                 visited.add(current_url)
                 save_link(db_name, current_url)
