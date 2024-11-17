@@ -46,16 +46,25 @@ def parse_links_from_wiki_page(url: str) -> Set[str]:
 def crawl_wiki(start_url: str, db_name: str, depth: int) -> None:
     visited: Set[str] = set()
     to_visit: List[Tuple[str, int]] = [(start_url, 0)]
-
+    create_database(db_name)
     while to_visit:
         current_url, current_depth = to_visit.pop(0)
-        if current_depth < depth and current_url not in visited:
-            visited.add(current_url)
-            save_link(db_name, current_url)
-            links = parse_links_from_wiki_page(current_url)
-            for link in links:
-                if link not in visited:
-                    to_visit.append((link, current_depth + 1))
+        if current_depth <= depth:
+            print(current_url)
+            if current_url not in visited:
+                visited.add(current_url)
+                save_link(db_name, current_url)
+                to_visit = accept_to_parse(current_depth, depth, to_visit, current_url, visited)        
+        else:
+            break
+
+def accept_to_parse(current_depth: int, depth: int, to_visit: List[Tuple[str, int]], current_url: str, visited: Set[str]) -> List[Tuple[str, int]]:
+    if current_depth < depth:
+        links = parse_links_from_wiki_page(current_url)
+        for link in links:
+            if link not in visited:
+                to_visit.append((link, current_depth + 1))
+    return to_visit
 
 if __name__ == '__main__':
     import argparse
