@@ -25,15 +25,23 @@ def save_link(db_name: str, url: str) -> None:
     with sqlite3.connect(db_name) as conn:
         conn.execute('INSERT OR IGNORE INTO links (url) VALUES (?)', (url,))
 
+def save_links(db_name: str, visited: Set[str]) -> None:
+    with sqlite3.connect(db_name) as conn:
+        for url in visited:
+            conn.execute('INSERT OR IGNORE INTO links (url) VALUES (?)', (url,))
+        conn.commit()
+
 def fetch_page(url: str) -> Optional[str]:
     parsed_url = urlparse(url)
     conn = http.client.HTTPSConnection(parsed_url.netloc)
-    conn.request("GET", parsed_url.path)
-    
-    response = conn.getresponse()
-    if response.status == 200:
-        return response.read().decode('utf-8')
-    return None
+    try:
+        conn.request("GET", parsed_url.path)
+        response = conn.getresponse()
+        if response.status == 200:
+            return response.read().decode('utf-8')
+        return None
+    finally:
+        conn.close()
 
 def parse_links_from_wiki_page(url: str) -> Set[str]:
     html_content = fetch_page(url)
@@ -52,17 +60,16 @@ def crawl_wiki(start_url: str, db_name: str, depth: int) -> None:
         if current_depth <= depth:
             if current_url not in visited:
                 visited.add(current_url)
-                save_link(db_name, current_url)
                 to_visit = accept_to_parse(current_depth, depth, to_visit, current_url, visited)        
         else:
             break
+    save_links(db_name, visited)
 
 def accept_to_parse(current_depth: int, depth: int, to_visit: List[Tuple[str, int]], current_url: str, visited: Set[str]) -> List[Tuple[str, int]]:
     if current_depth < depth:
         links = parse_links_from_wiki_page(current_url)
         for link in links:
-            if link not in visited:
-                to_visit.append((link, current_depth + 1))
+            to_visit.append((link, current_depth + 1))
     return to_visit
 
 if __name__ == '__main__':
