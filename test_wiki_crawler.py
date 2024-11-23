@@ -60,12 +60,13 @@ class TestWikiCrawler(unittest.TestCase):
 
 
         with sqlite3.connect(db_name) as conn:
+            # Извлечение всех ссылок из базы данных 
             cursor = conn.execute('SELECT url FROM links')
             urls = [row[0] for row in cursor.fetchall()]
-            print(print(len(urls)))
 
+        self.assertEqual(56204, len(urls), "Числа не равны") # Проверка количества сохраненных ссылок
 
 if __name__ == '__main__':
 
-    unittest.main()
+    unittest.main() # Запуск тестов
 
